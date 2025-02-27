@@ -3,6 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+#include <pybind11/eigen.h>  // Add for Eigen support
 
 // Import all submodule headers
 #include "XA.h"
@@ -10,7 +11,7 @@
 #include "YB.h"
 #include "XC.h"
 #include "YC.h"
-// Future headers will go here (YA, XB, YB, XC, YC, etc.)
+#include "Minfinity.h"  // Add Minfinity header
 
 namespace py = pybind11;
 
@@ -20,4 +21,4 @@ void init_YA(py::module& m);
 void init_YB(py::module& m);
 void init_XC(py::module& m);
 void init_YC(py::module& m);
-// Future module init declarations will go here
+void init_Minfinity(py::module& m);  // Add Minfinity initialization function

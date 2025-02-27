@@ -62,3 +62,9 @@ Thumbs.db
 
 # Cache
 .cache/
+
+# Third party
+third_party/eigen/
+
+# Various
+var/

@@ -188,6 +188,122 @@ void init_YC(py::module& m) {
         "Clear all cached values and reset profiling data for YC functions");
 }
 
+void init_Minfinity(py::module& m) {
+    auto minf = m.def_submodule("Minfinity", "Mobility matrices for many-body hydrodynamic interactions");
+    
+    // Expose Levi-Civita tensor
+    minf.def("levi", &levi, "Levi-Civita tensor");
+
+    // Expose tensor operations
+    minf.def("J_tensor", &J_tensor, "J tensor calculation");
+    minf.def("Lap_J", &Lap_J, "Laplacian of J tensor");
+    minf.def("D_J", &D_J, "Derivative of J tensor");
+    minf.def("R_tensor", &R_tensor, "R tensor calculation");
+    minf.def("K_tensor", &K_tensor, "K tensor calculation");
+    minf.def("DD_J", &DD_J, "Second derivative of J tensor");
+    minf.def("DLap_J", &DLap_J, "Derivative of Laplacian of J tensor");
+    
+    // Expose main computation functions - updated implementation
+    minf.def("computeMinfinityArray", [](const py::array_t<double>& positions_array, 
+                                      const py::array_t<double>& radii_array, double mu) {
+        // Check input arrays
+        if (positions_array.ndim() != 2 || positions_array.shape(1) != 3) {
+            throw std::runtime_error("positions must be an Nx3 array");
+        }
+        if (radii_array.ndim() != 1) {
+            throw std::runtime_error("radii must be a 1D array");
+        }
+        if (positions_array.shape(0) != radii_array.shape(0)) {
+            throw std::runtime_error("Number of positions must match number of radii");
+        }
+
+        // Convert numpy arrays to vectors
+        std::vector<Eigen::Vector3d> positions;
+        std::vector<double> radii;
+        
+        for (py::ssize_t i = 0; i < positions_array.shape(0); i++) {
+            Eigen::Vector3d pos(
+                positions_array.at(i, 0),
+                positions_array.at(i, 1),
+                positions_array.at(i, 2)
+            );
+            positions.push_back(pos);
+            radii.push_back(radii_array.at(i));
+        }
+        
+        // Call the C++ function
+        return computeMinfinity(positions, radii, mu);
+    }, "Compute the Minfinity mobility matrix for a collection of particles");
+    
+    // Add Rinfinity computation
+    minf.def("computeRinfinityArray", [](const py::array_t<double>& positions_array, 
+                                      const py::array_t<double>& radii_array, double mu) {
+        // Check input arrays
+        if (positions_array.ndim() != 2 || positions_array.shape(1) != 3) {
+            throw std::runtime_error("positions must be an Nx3 array");
+        }
+        if (radii_array.ndim() != 1) {
+            throw std::runtime_error("radii must be a 1D array");
+        }
+        if (positions_array.shape(0) != radii_array.shape(0)) {
+            throw std::runtime_error("Number of positions must match number of radii");
+        }
+
+        // Convert numpy arrays to vectors
+        std::vector<Eigen::Vector3d> positions;
+        std::vector<double> radii;
+        
+        for (py::ssize_t i = 0; i < positions_array.shape(0); i++) {
+            Eigen::Vector3d pos(
+                positions_array.at(i, 0),
+                positions_array.at(i, 1),
+                positions_array.at(i, 2)
+            );
+            positions.push_back(pos);
+            radii.push_back(radii_array.at(i));
+        }
+        
+        // Call the C++ function
+        return computeRinfinity(positions, radii, mu);
+    }, "Compute the Rinfinity resistance matrix (inverse of Minfinity) for a collection of particles");
+
+    // Expose OpenMP-related functions if available
+    #ifdef _OPENMP
+    minf.def("get_max_threads", []() { 
+        return omp_get_max_threads(); 
+    }, "Get maximum number of OpenMP threads available");
+    
+    minf.def("set_num_threads", [](int num_threads) { 
+        if (num_threads > 0) {
+            omp_set_num_threads(num_threads);
+        }
+    }, "Set number of OpenMP threads");
+    
+    minf.def("get_num_threads", []() { 
+        int num_threads = 0;
+        #pragma omp parallel
+        {
+            #pragma omp single
+            num_threads = omp_get_num_threads();
+        }
+        return num_threads;
+    }, "Get current number of OpenMP threads");
+    
+    minf.def("has_openmp", []() { return true; }, "Check if OpenMP is available");
+    #else
+    minf.def("get_max_threads", []() { return 1; }, 
+        "Get maximum number of threads available (always 1 without OpenMP)");
+    
+    minf.def("set_num_threads", [](int num_threads) { /* Do nothing */ }, 
+        "Set number of threads (no effect without OpenMP)");
+    
+    minf.def("get_num_threads", []() { return 1; }, 
+        "Get current number of threads (always 1 without OpenMP)");
+    
+    minf.def("has_openmp", []() { return false; }, "Check if OpenMP is available");
+    #endif
+}
+
 /**
  * @brief Compute all resistance functions for an array of distances
  * 
@@ -338,5 +454,5 @@ PYBIND11_MODULE(stokeskit, m) {
     init_YB(m);
     init_XC(m);
     init_YC(m);
-    // Future submodule initializations will go here
+    init_Minfinity(m);  // Add Minfinity initialization
 }
