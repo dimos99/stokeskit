@@ -19,8 +19,8 @@ namespace {
     constexpr double DEFAULT_LUBR_CUTOFF = 2.001;
     constexpr double DEFAULT_CUTOFF = 4.0;
     constexpr int DEFAULT_MAX_ITER = 200;
-    constexpr double DEFAULT_RTOL = 1e-4;
-    constexpr double DEFAULT_ATOL = 1e-6;
+    constexpr double DEFAULT_RTOL = 1e-5;
+    constexpr double DEFAULT_ATOL = 1e-8;
 }
 
 // Cache-related declarations

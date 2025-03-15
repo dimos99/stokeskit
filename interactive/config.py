@@ -12,13 +12,13 @@ SPHERE1_RADIUS = 50  # Radius of the first sphere
 SPHERE2_RADIUS = 25  # Radius of the second sphere
 
 # Physics constants
-FLUID_VISCOSITY = 10  # Correct original value (was mistakenly changed to 50)
-GRAVITY = np.array([0.0, 0.0])  # Gravity direction
+FLUID_VISCOSITY = 100  # Correct original value (was mistakenly changed to 50)
+GRAVITY = np.array([0.0, 30.0])  # Gravity direction
 TIME_SCALE = .1  # Time scale for more visible motion
 MIN_DISTANCE = 2.01  # Minimum allowed distance between sphere centers
-WALL_DAMPING = 0.8  # Damping factor for wall collisions
+WALL_DAMPING = 1.0  # Damping factor for wall collisions
 VELOCITY_DAMPING = 1.0  # Reduced damping to allow longer movement
-TEMPERATURE = 1000000  # Temperature parameter controlling Brownian motion strength
+TEMPERATURE = 10000000  # Temperature parameter controlling Brownian motion strength
 BROWNIAN_SCALE = 1.0  # Scale factor for Brownian motion forces
 
 # Visual settings

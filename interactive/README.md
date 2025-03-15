@@ -17,15 +17,16 @@ This interactive environment allows you to manipulate two spheres and observe th
 - Toggleable display of velocity and force vectors
 - Brownian motion simulation
 - Physically accurate fluid dynamics based on Stokes flow
-- Elastic collisions between spheres and walls
-- Adjustable parameters through the UI
-- Visual grid background
+- Elastic collisions between spheres and boundaries
+- Adjustable parameters through UI buttons
+- Visual grid background with toggle option
+- Antialiased sphere rendering with gradient and lighting effects
 
 ## Requirements
 
 - Python 3.6+
-- Pygame
-- NumPy
+- Pygame 2.0+
+- NumPy 1.19+
 - StokesKit
 
 ## Installation
@@ -50,25 +51,25 @@ python main.py
 The project is organized as follows:
 
 - `/interactive/` - Contains all the interactive simulation code
+  - `main.py` - Entry point script
   - `simulation.py` - Main simulation class
   - `sphere.py` - Sphere class implementation
   - `config.py` - Configuration settings
-  - `physics/` - Physics calculations
-    - `collision.py` - Collision handling
-    - `hydrodynamics.py` - Hydrodynamic calculations
-  - `ui/` - User interface components
-    - `button.py` - Button implementation
-    - `drawing.py` - Drawing utilities
   - `utils.py` - Utility functions
-  - `main.py` - Entry point script
+  - `/physics/` - Physics calculations
+    - `collision.py` - Collision handling between spheres
+    - `hydrodynamics.py` - Hydrodynamic forces calculation
+  - `/ui/` - User interface components
+    - `button.py` - Interactive button implementation
+    - `drawing.py` - Drawing utilities for vectors, panels, etc.
 
 ## Controls
 
 ### Basic Controls:
 - **Click and drag** a sphere to move it
-- **Release** the mouse button to "throw" the sphere
-- **Shift+Click and drag** to create a spring-like effect
-- **Ctrl+Click** the Brownian Motion button to stop all motion
+- **Release** the mouse button to place the sphere with no velocity
+- **Shift+Click and drag** to create a spring-like effect and throw the sphere
+- **Ctrl+Click** the Brownian Motion button to stop all motion immediately
 
 ### UI Controls:
 - **Hydrodynamics** - Toggle between full hydrodynamics and simple drag
@@ -94,25 +95,20 @@ The simulation uses StokesKit to calculate hydrodynamic interactions between sph
 
 ### Vector Visualization
 The simulation provides real-time visualization of:
-- Velocity vectors (blue)
-- Hydrodynamic force vectors (red)
+- Velocity vectors (green)
+- Hydrodynamic force vectors (orange)
 
 ### Physical Accuracy
-- Properly scaled hydrodynamic interactions
+- Properly scaled hydrodynamic interactions using resistance matrices
 - Mass-proportional gravity effects
 - Viscous damping of motion
 - Elastic collisions with conservation of momentum
-
-## Extending the Simulation
-
-To add more spheres or additional physics:
-1. Extend the `spheres` list in the `HydrodynamicSimulation` class
-2. Update the `calculate_hydrodynamic_forces` method to handle multiple sphere interactions
-3. Add additional resistance functions for more complex hydrodynamic effects
+- Brownian motion scaled by temperature and particle size
 
 ## Troubleshooting
 
 If you encounter performance issues:
-- Disable Brownian motion
+- Disable Brownian motion (using the button)
 - Reduce the display resolution in config.py
-- Simplify the physics model by using simple drag instead of full hydrodynamics
+- Simplify the physics model by turning off hydrodynamics
+- Ensure your Python environment has access to StokesKit

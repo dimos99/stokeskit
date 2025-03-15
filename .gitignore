@@ -61,7 +61,7 @@ docs/_build/
 Thumbs.db
 
 # Cache
-.cache/
+**/.cache/
 
 # Third party
 third_party/eigen/

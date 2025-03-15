@@ -2,6 +2,16 @@
 #include <pybind11/numpy.h>
 #include <omp.h>
 
+// Forward declarations for R2Bexact functions
+Eigen::MatrixXd generateR2Bexact(
+    const std::vector<Eigen::Vector3d>& positions,
+    const std::vector<double>& radii,
+    double mu,
+    double cutoff_factor
+);
+
+Eigen::MatrixXd testR2BexactSimple();
+
 void init_XA(py::module& m) {
     auto xa = m.def_submodule("XA", "XA scalar resistance functions");
     
@@ -304,6 +314,51 @@ void init_Minfinity(py::module& m) {
     #endif
 }
 
+void init_R2Bexact(py::module& m) {
+    auto r2b = m.def_submodule("R2Bexact", "Two-body exact resistance matrices");
+    
+    r2b.def("generate", [](const py::array_t<double, py::array::c_style | py::array::forcecast>& positions_array, 
+                          const py::array_t<double, py::array::c_style | py::array::forcecast>& radii_array, 
+                          double mu = 1.0,
+                          double cutoff_factor = 2.0) {
+        // Check input arrays
+        if (positions_array.ndim() != 2 || positions_array.shape(1) != 3) {
+            throw std::runtime_error("positions must be an Nx3 array");
+        }
+        if (radii_array.ndim() != 1) {
+            throw std::runtime_error("radii must be a 1D array");
+        }
+        if (positions_array.shape(0) != radii_array.shape(0)) {
+            throw std::runtime_error("Number of positions must match number of radii");
+        }
+
+        // Convert numpy arrays to vectors
+        std::vector<Eigen::Vector3d> positions;
+        std::vector<double> radii;
+        
+        for (py::ssize_t i = 0; i < positions_array.shape(0); i++) {
+            Eigen::Vector3d pos(
+                positions_array.at(i, 0),
+                positions_array.at(i, 1),
+                positions_array.at(i, 2)
+            );
+            positions.push_back(pos);
+            radii.push_back(radii_array.at(i));
+        }
+        
+        // Call the C++ function
+        return generateR2Bexact(positions, radii, mu, cutoff_factor);
+    }, "Generate the exact two-body resistance matrices for a collection of particles",
+       py::arg("positions"), 
+       py::arg("radii"),
+       py::arg("mu") = 1.0,
+       py::arg("cutoff_factor") = 2.0);
+    
+    // Add test function
+    r2b.def("test", &testR2BexactSimple, 
+        "Run a simple test of the R2Bexact implementation");
+}
+
 /**
  * @brief Compute all resistance functions for an array of distances
  * 
@@ -324,7 +379,7 @@ py::dict compute_resistance_functions(
     int maxIter = DEFAULT_MAX_ITER,
     double rtol = DEFAULT_RTOL,
     double atol = DEFAULT_ATOL) {
-    
+        
     if (!distances.size() || !l_values.size()) {
         throw std::runtime_error("Input arrays cannot be empty");
     }
@@ -455,4 +510,5 @@ PYBIND11_MODULE(stokeskit, m) {
     init_XC(m);
     init_YC(m);
     init_Minfinity(m);  // Add Minfinity initialization
+    init_R2Bexact(m);  // Add R2Bexact initialization
 }
