@@ -1,4 +1,5 @@
 #include "YC.h"
+#include "cache_hash.h"
 
 #include "common.h"
 #include <fstream>
@@ -91,9 +92,9 @@ struct Cache_YC {
     std::vector<std::pair<bool, double>> P_cache; // (valid, value) pairs
     std::vector<std::pair<bool, double>> V_cache;
     std::vector<std::pair<bool, double>> Q_cache;
-    std::map<std::pair<int, double>, double> fk_cache; // Keep this as map
-    std::map<std::pair<bool, double>, double> CY_cache; // Keep this as map
-    std::map<double, GCoeffs_YC> g_coeffs_cache; // Keep this as map
+    std::unordered_map<std::pair<int, double>, double, pair_int_double_hash> fk_cache; // Keep this as unordered_map
+    std::unordered_map<std::pair<bool, double>, double, pair_bool_double_hash> CY_cache; // Keep this as unordered_map
+    std::unordered_map<double, GCoeffs_YC> g_coeffs_cache; // Keep this as unordered_map
     
     Cache_YC() : 
         P_cache(get_cache_size(), {false, 0.0}),
@@ -131,15 +132,17 @@ struct Cache_YC {
 #endif
     }
 
-    // Add template method for inserting into map caches
-    template<typename K, typename V>
-    void insertWithCheck(std::map<K,V>& cache, const K& key, const V& value) {
+    // Add template method for inserting into unordered_map caches
+    template<typename K, typename V, typename H>
+    void insertWithCheck(std::unordered_map<K,V,H>& cache, const K& key, const V& value) {
         cache[key] = value;
         if (cache.size() > MAX_CACHE_SIZE) {
             std::cerr << "Warning: YC cache size exceeded maximum limit. Clearing cache..." << std::endl;
             auto it = cache.begin();
-            std::advance(it, cache.size() / 2);
-            cache.erase(it, cache.end());
+            size_t to_remove = cache.size() / 2;
+            for (size_t i = 0; i < to_remove && it != cache.end(); ++i) {
+                it = cache.erase(it);
+            }
         }
 #ifdef ENABLE_PROFILING
         updateMemoryStats();

@@ -22,6 +22,20 @@ if enable_debug:
 extra_compile_args = ['-std=c++17', '-fvisibility=default']
 extra_link_args = []  # Initialize empty, will be set per platform
 
+# Initialize include_dirs early
+include_dirs = []
+
+# Detect architecture
+is_arm = platform.machine() in ('arm64', 'aarch64')
+
+# Function to check if a file exists in any of the directories
+def find_file(filename, search_paths):
+    for path in search_paths:
+        file_path = os.path.join(path, filename)
+        if os.path.exists(file_path):
+            return path
+    return None
+
 # Add OpenMP flags based on platform
 if sys.platform == 'darwin':  # macOS
     extra_compile_args.extend(['-Xpreprocessor', '-fopenmp'])
@@ -37,6 +51,26 @@ if sys.platform == 'darwin':  # macOS
 elif sys.platform == 'linux':  # Linux
     extra_compile_args.append('-fopenmp')
     extra_link_args.extend(['-fopenmp', '-lz'])  # Add zlib
+    
+    # Check for zlib headers
+    zlib_search_paths = [
+        '/usr/include',
+        '/usr/local/include',
+        '/opt/local/include',
+        '/home/dimos/.conda/envs/jaxsd/include',
+    ]
+    
+    zlib_include_path = find_file('zlib.h', zlib_search_paths)
+    if zlib_include_path:
+        print(f"Found zlib.h in {zlib_include_path}")
+        if zlib_include_path not in include_dirs:
+            include_dirs.append(zlib_include_path)
+    else:
+        print("ERROR: zlib.h not found! Please install zlib development headers.")
+        print("On Ubuntu/Debian: sudo apt-get install zlib1g-dev")
+        print("On CentOS/RHEL: sudo yum install zlib-devel")
+        print("On Conda: conda install -c anaconda zlib")
+        sys.exit(1)
 else:  # Windows
     extra_compile_args.append('/openmp')
 
@@ -54,21 +88,35 @@ if enable_debug:
 else:
     # Enhanced Release mode flags
     if sys.platform == 'darwin' or sys.platform == 'linux':
-        extra_compile_args.extend([
+        # Common optimization flags for all architectures
+        arch_specific_flags = [
             '-O3',                    # Maximum optimization
             '-march=native',          # CPU-specific optimizations
             '-ffast-math',            # Aggressive floating-point optimizations
-            '-flto',                  # Link-time optimization
-            '-fuse-linker-plugin',    # Better LTO
             '-funroll-loops',         # Loop unrolling
-            '-mavx2',                 # Enable AVX2 instructions if available
-            '-mfma',                  # Enable FMA instructions if available
             '-DNDEBUG'
-        ])
-        extra_link_args.extend([
-            '-flto',                  # Link-time optimization
-            '-fuse-linker-plugin'     # Better LTO
-        ])
+        ]
+        
+        # LTO flags - don't use fuse-linker-plugin on ARM
+        if not is_arm:
+            arch_specific_flags.append('-flto')
+            extra_link_args.append('-flto')
+            
+            # x86 specific flags
+            arch_specific_flags.extend([
+                '-mavx2',                 # Enable AVX2 instructions (x86 only)
+                '-mfma'                   # Enable FMA instructions (x86 only)
+            ])
+            
+            # Only add fuse-linker-plugin on x86
+            arch_specific_flags.append('-fuse-linker-plugin')
+            extra_link_args.append('-fuse-linker-plugin')
+        else:
+            # ARM specific LTO flag without plugin
+            arch_specific_flags.append('-flto')
+            extra_link_args.append('-flto')
+            
+        extra_compile_args.extend(arch_specific_flags)
     else:  # Windows
         extra_compile_args.extend([
             '/O2',                    # Maximum optimization
@@ -135,12 +183,12 @@ if not os.path.exists(eigen_include_dir):
     os.remove(zip_path)
     print("Eigen library installed successfully.")
 
-# Include directories - add Eigen include path
-include_dirs = [
+# Include directories - add Eigen include path and potential zlib paths
+include_dirs += [
     pybind11.get_include(), 
     np.get_include(), 
     'src',
-    eigen_include_dir  # Changed to point directly to the include directory
+    eigen_include_dir,  # Changed to point directly to the include directory
 ]
 
 # Create the extension module

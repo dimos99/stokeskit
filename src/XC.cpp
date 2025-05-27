@@ -1,4 +1,5 @@
 #include "XC.h"
+#include "cache_hash.h"
 
 #include "common.h"
 
@@ -30,8 +31,8 @@
 struct Cache_XC {
     static const size_t MAX_CACHE_SIZE = 100000000000; // Updated size to match XA
 
-    std::map<std::tuple<int,int,int>, double> Q_cache; // (n, p, q) -> value
-    std::map<std::pair<int, double>, double> fk_cache; // (k, l) -> value
+    std::unordered_map<std::tuple<int,int,int>, double, tuple_int3_hash> Q_cache; // (n, p, q) -> value
+    std::unordered_map<std::pair<int, double>, double, pair_int_double_hash> fk_cache; // (k, l) -> value
 
     
     static Cache_XC& getInstance() {
@@ -70,13 +71,15 @@ struct Cache_XC {
         if (cache.size() > MAX_CACHE_SIZE) {
             std::cerr << "Warning: Cache size exceeded maximum limit. Clearing cache..." << std::endl;
             auto it = cache.begin();
-            std::advance(it, cache.size() / 2);
-            cache.erase(it, cache.end());
+            size_t to_remove = cache.size() / 2;
+            for (size_t i = 0; i < to_remove && it != cache.end(); ++i) {
+                it = cache.erase(it);
+            }
         }
     }
 
-    template<typename K, typename V>
-    void insertWithCheck(std::map<K,V>& cache, const K& key, const V& value) {
+    template<typename K, typename V, typename H>
+    void insertWithCheck(std::unordered_map<K,V,H>& cache, const K& key, const V& value) {
         cache[key] = value;
         checkAndTrimCache(cache);
 #ifdef ENABLE_PROFILING

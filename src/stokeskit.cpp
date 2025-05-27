@@ -69,7 +69,7 @@ void init_YA(py::module& m) {
         py::arg("k"), py::arg("l"));
 
     ya.def("YA11", &YA11,
-        "Calculate XA11 scalar resistance function",
+        "Calculate YA11 scalar resistance function",
         py::arg("s"), py::arg("l"), 
         py::arg("lubr_cutoff")=2.001, // TODO: Decide on default values
         py::arg("cutoff")=4.0,
@@ -78,7 +78,7 @@ void init_YA(py::module& m) {
         py::arg("atol")=1e-6);
 
     ya.def("YA12", &YA12,
-        "Calculate XA12 scalar resistance function",
+        "Calculate YA12 scalar resistance function",
         py::arg("s"), py::arg("l"),
         py::arg("lubr_cutoff")=2.001, // TODO: Decide on default values
         py::arg("cutoff")=4.0,
@@ -87,7 +87,7 @@ void init_YA(py::module& m) {
         py::arg("atol")=1e-6);
 
     ya.def("clear_cache", &ya_utils::clear_cache,
-        "Clear all cached values and reset profiling data for XA functions");
+        "Clear all cached values and reset profiling data for YA functions");
 }
 
 void init_YB(py::module& m) {
@@ -110,27 +110,26 @@ void init_YB(py::module& m) {
         py::arg("k"), py::arg("l"));
 
     yb.def("YB11", &YB11,
-        "Calculate XA11 scalar resistance function",
+        "Calculate YB11 scalar resistance function",
         py::arg("s"), py::arg("l"), 
-        py::arg("lubr_cutoff")=2.001, // TODO: Decide on default values
+        py::arg("lubr_cutoff")=2.001,        
         py::arg("cutoff")=4.0,
         py::arg("maxIter")=200,
         py::arg("rtol")=1e-4,
         py::arg("atol")=1e-6);
 
     yb.def("YB12", &YB12,
-        "Calculate XA12 scalar resistance function",
+        "Calculate YB12 scalar resistance function",
         py::arg("s"), py::arg("l"),
-        py::arg("lubr_cutoff")=2.001, // TODO: Decide on default values
+        py::arg("lubr_cutoff")=2.001,        
         py::arg("cutoff")=4.0,
         py::arg("maxIter")=200,
         py::arg("rtol")=1e-4,
         py::arg("atol")=1e-6);
 
-    yb.def("clear_cache", &ya_utils::clear_cache,
-        "Clear all cached values and reset profiling data for XA functions");
+    yb.def("clear_cache", &yb_utils::clear_cache,
+        "Clear all cached values and reset profiling data for YB functions");
 }
-
 
 void init_XC(py::module& m) {
     auto xc = m.def_submodule("XC", "XC scalar resistance functions");

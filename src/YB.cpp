@@ -1,4 +1,5 @@
 #include "YB.h"
+#include "cache_hash.h"
 
 #include "common.h"
 
@@ -59,9 +60,9 @@ struct GCoeffs_YB {
 struct Cache_YB {
     static const size_t MAX_CACHE_SIZE = 100000000000; // Updated size to match XA
 
-    std::map<std::pair<int, double>, double> fk_cache; // (k, l) -> value
-    std::map<std::pair<bool, double>, double> BX_cache; // bool isYB11, double l
-    std::map<double, GCoeffs_YB> g_coeffs_cache; // l -> GCoeffs_YB
+    std::unordered_map<std::pair<int, double>, double, pair_int_double_hash> fk_cache; // (k, l) -> value
+    std::unordered_map<std::pair<bool, double>, double, pair_bool_double_hash> BX_cache; // bool isYB11, double l
+    std::unordered_map<double, GCoeffs_YB> g_coeffs_cache; // l -> GCoeffs_YB
     
     static Cache_YB& getInstance() {
         static Cache_YB instance;
@@ -104,13 +105,15 @@ struct Cache_YB {
         if (cache.size() > MAX_CACHE_SIZE) {
             std::cerr << "Warning: Cache size exceeded maximum limit. Clearing cache..." << std::endl;
             auto it = cache.begin();
-            std::advance(it, cache.size() / 2);
-            cache.erase(it, cache.end());
+            size_t to_remove = cache.size() / 2;
+            for (size_t i = 0; i < to_remove && it != cache.end(); ++i) {
+                it = cache.erase(it);
+            }
         }
     }
 
-    template<typename K, typename V>
-    void insertWithCheck(std::map<K,V>& cache, const K& key, const V& value) {
+    template<typename K, typename V, typename H>
+    void insertWithCheck(std::unordered_map<K,V,H>& cache, const K& key, const V& value) {
         cache[key] = value;
         checkAndTrimCache(cache);
 #ifdef ENABLE_PROFILING

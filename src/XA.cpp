@@ -1,5 +1,5 @@
 #include "XA.h"
-
+#include "cache_hash.h"
 
 #include "common.h"
 
@@ -63,11 +63,11 @@ struct GCoeffs_XA {
 struct Cache_XA {
     static const size_t MAX_CACHE_SIZE = 100000000000; // Maximum entries per cache
 
-    std::map<std::tuple<int,int,int>, double> P_cache; // (n, p, q) -> value
-    std::map<std::tuple<int,int,int>, double> V_cache; // (n, p, q) -> value
-    std::map<std::pair<int, double>, double> fk_cache; // (k, l) -> value
-    std::map<std::pair<bool, double>, double> AX_cache; // bool isXA11, double l
-    std::map<double, GCoeffs_XA> g_coeffs_cache; // l -> GCoeffs_XA
+    std::unordered_map<std::tuple<int,int,int>, double, tuple_int3_hash> P_cache; // (n, p, q) -> value
+    std::unordered_map<std::tuple<int,int,int>, double, tuple_int3_hash> V_cache; // (n, p, q) -> value
+    std::unordered_map<std::pair<int, double>, double, pair_int_double_hash> fk_cache; // (k, l) -> value
+    std::unordered_map<std::pair<bool, double>, double, pair_bool_double_hash> AX_cache; // bool isXA11, double l
+    std::unordered_map<double, GCoeffs_XA> g_coeffs_cache; // l -> GCoeffs_XA
     
     static Cache_XA& getInstance() {
         static Cache_XA instance;
@@ -120,15 +120,17 @@ struct Cache_XA {
     void checkAndTrimCache(MapType& cache) {
         if (cache.size() > MAX_CACHE_SIZE) {
             std::cerr << "Warning: Cache size exceeded maximum limit. Clearing cache..." << std::endl;
-            // Remove last half of elements
+            // For unordered_map, remove half the elements
             auto it = cache.begin();
-            std::advance(it, cache.size() / 2);
-            cache.erase(it, cache.end());
+            size_t to_remove = cache.size() / 2;
+            for (size_t i = 0; i < to_remove && it != cache.end(); ++i) {
+                it = cache.erase(it);
+            }
         }
     }
 
-    template<typename K, typename V>
-    void insertWithCheck(std::map<K,V>& cache, const K& key, const V& value) {
+    template<typename K, typename V, typename H>
+    void insertWithCheck(std::unordered_map<K,V,H>& cache, const K& key, const V& value) {
         cache[key] = value;
         checkAndTrimCache(cache);
 #ifdef ENABLE_PROFILING

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "cache_hash.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -7,8 +8,8 @@
 struct GlobalCache {
     static const size_t MAX_CACHE_SIZE = 100000000000; // Maximum entries per cache
 
-    std::map<std::pair<int, int>, double> comb_cache;
-    std::map<std::pair<double, double>, double> zeta_cache;
+    std::unordered_map<std::pair<int, int>, double, pair_int_int_hash> comb_cache;
+    std::unordered_map<std::pair<double, double>, double, pair_double_double_hash> zeta_cache;
     
     static GlobalCache& getInstance() {
         static GlobalCache instance;
@@ -46,15 +47,17 @@ struct GlobalCache {
     void checkAndTrimCache(MapType& cache) {
         if (cache.size() > MAX_CACHE_SIZE) {
             std::cerr << "Warning: Global cache size exceeded maximum limit. Clearing cache..." << std::endl;
-            // Remove last half of elements
+            // For unordered_map, we can't use iterators as easily, so clear half by removing elements
             auto it = cache.begin();
-            std::advance(it, cache.size() / 2);
-            cache.erase(it, cache.end());
+            size_t to_remove = cache.size() / 2;
+            for (size_t i = 0; i < to_remove && it != cache.end(); ++i) {
+                it = cache.erase(it);
+            }
         }
     }
 
-    template<typename K, typename V>
-    void insertWithCheck(std::map<K,V>& cache, const K& key, const V& value) {
+    template<typename K, typename V, typename H>
+    void insertWithCheck(std::unordered_map<K,V,H>& cache, const K& key, const V& value) {
         cache[key] = value;
         checkAndTrimCache(cache);
 #ifdef ENABLE_PROFILING
