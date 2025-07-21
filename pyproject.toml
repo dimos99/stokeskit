@@ -1,0 +1,47 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+    "pybind11>=2.6.0",
+    "numpy"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stokeskit"
+version = "0.1.0"
+description = "A Python package for Stokes flow computations"
+authors = [
+    { name = "Dimos Aslanis", email = "d.aslanis@uu.nl" }
+]
+requires-python = ">=3.6"
+dependencies = [
+    "pybind11>=2.6.0"
+]
+
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[[tool.setuptools.ext-modules]]
+name = "stokeskit"
+sources = [
+    "src/stokeskit.cpp",
+    "src/common.cpp",
+    "src/XA.cpp",
+    "src/YA.cpp",
+    "src/YB.cpp",
+    "src/XC.cpp",
+    "src/YC.cpp",
+    "src/Minfinity.cpp",
+    "src/R2Bexact.cpp"
+]
+include-dirs = [
+    "src",
+    "third_party/eigen/include"
+]
+language = "c++"
